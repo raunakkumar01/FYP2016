@@ -1,0 +1,200 @@
+NestedIf
+                                "10 LET A = 2" + "\n" +
+				"20 LET B = 20" + "\n" +
+                                "30 IF ( A = 4 ) THEN "+"\n"+
+                                "40 LET C = ( 24 - B )"+"\n"+
+                                "50 LET D = ( B - A )"+"\n"+
+                                "50 IF ( B = 22 ) THEN "+"\n"+
+                                "60 LET E = ( B - A )"+"\n"+
+                                "70 ENDIF"+"\n"+
+                                "80 ENDIF";
+
+
+IF{While}
+
+                                "10 LET A = 2" + "\n" +
+				"20 LET B = 20" + "\n" +
+                                "20 LET E = 0" + "\n" +
+                                "30 IF ( A = 4 ) THEN "+"\n"+
+                                "40 LET C = ( 24 - B )"+"\n"+
+                                "50 LET D = ( B - A )"+"\n"+
+                                "50 WHILE ( E = 3 ) THEN "+"\n"+
+                                "60 LET E = ( E + 1 )"+"\n"+
+                                "70 WEND"+"\n"+
+                                "80 ENDIF";
+
+
+While Loop
+                                "10 LET A = 2" + "\n" +
+				"20 LET B = 20" + "\n" +
+                                "20 LET E = 2" + "\n" +
+                                "50 WHILE ( E < 5 ) THEN "+"\n"+
+                                "60 DO E = ( E + 1 )"+"\n"+
+                                "70 WEND";
+
+
+10 LET A = 0
+20 LET E = 0
+50 WHILE ( E < 11 ) THEN
+60 DO E = ( E + 1 )
+70 DO A = ( A + E )
+80 WEND
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package Comp;
+
+import block.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import expevl.*;
+
+/**
+ *
+ * @author HP
+ * @param <L>
+ * @param <R>
+ */
+class Pair<L,R> {
+
+  private final L left;
+  private final R right;
+
+  public Pair(L left, R right) {
+    this.left = left;
+    this.right = right;
+  }
+
+  public L getLeft() { return left; }
+  public R getRight() { return right; }
+
+  @Override
+  public int hashCode() { return left.hashCode() ^ right.hashCode(); }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof Pair)) return false;
+    Pair pairo = (Pair) o;
+    return this.left.equals(pairo.getLeft()) &&
+           this.right.equals(pairo.getRight());
+  }
+
+}
+
+
+public class Runtime {
+    
+    public static HashMap<String,Statement> symbltabl=new HashMap<String,Statement>();
+    public static int varbadd=1000,globalLabel=1;
+    public static Queuen gl=new Queuen(100);
+    public static int getvarbadd()
+        {return varbadd++;}
+    
+    public static int incrGlobalLabel()
+            {return globalLabel++;}
+    
+    public Runtime() {
+		
+		String code =   "10 LET A = 2" + "\n" +
+				"20 LET B = 22" + "\n" +
+                                "30 IF ( A = 4 ) THEN "+"\n"+
+                                "40 LET C = ( 24 - B )"+"\n"+
+                                "50 ELSE "+"\n"+
+                                "60 LET D = ( B - A )"+"\n"+
+                                "70 ENDIF";
+                //"30 LET C = ( B / A ) * A + A"+"\n"+
+                                /*"20 LET C = 2" + "\n" +
+                                "30 LET D = A + ( B - C )";*/
+
+		
+		boolean success = false;
+		
+                
+                Block blockm=new Block(null);//for the whole program
+                Block block=blockm;
+		for (String line : code.split("\n")) {
+			success = false;
+			line = line.trim();
+			Tokenize tokenizer = new Tokenize();
+                        String token[]=tokenizer.givetoken(line);
+		
+                        if(token[1].equals("LET"))
+                        {
+                            /*if(!token[3].equals("("))
+                            {
+                                symbltabl.put(token[1],new Pair(Integer.parseInt(token[3]),(""+varbadd)));
+                                varbadd++;
+                            }*/
+                           
+                             Block newBlock= new Statement(block,token[2],line.substring(line.indexOf(token[4],4)));
+                            //passes the current block as parent, name of variable, and its value;
+                            block.addBlock(newBlock);                       
+                        }
+                        else if(token[1].equals("IF"))
+                        {
+                              Block newBlock= new IfElse("IF",line.substring(line.indexOf('('),line.indexOf(')')+1),"GL"+globalLabel,block);
+                              //System.out.println(line.substring(line.indexOf('('),line.indexOf(')')+1)+" ; "+"GL"+globalLabel);
+                              
+                              gl.push(globalLabel);incrGlobalLabel();
+                              block.addBlock(newBlock);
+                              block=newBlock;
+                        }
+                        else if(token[1].equals("ELSE"))
+                        {
+                              Block newBlock= new IfElse("ELSE","","GL"+globalLabel,block.getSuperBlock());
+                              //System.out.println(" ; "+"GL"+globalLabel);
+                              
+                              gl.push(globalLabel);incrGlobalLabel();
+                              block=block.getSuperBlock();
+                              block.addBlock(newBlock);
+                              block=newBlock;
+                        }
+                        else if(token[1].equals("ENDIF"))
+                        {
+                              
+                              Block newBlock= new IfElse("ENDIF","","",block.getSuperBlock());
+                              block=block.getSuperBlock();
+                              block.addBlock(newBlock);
+                        }
+			//System.out.println(token[0]);
+			
+			/*if (!success) {//if no parser could parse the line thus we say it is invalid
+				throw new IllegalArgumentException("Invalid line " + line);
+			}*/
+		}
+                
+                
+		block.run();
+		System.out.println(" HLT");
+		
+		
+	}
+
+	public static void main(String[] args) {
+		new Runtime();
+	}
+    
+}
